@@ -1,0 +1,189 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:xml="http://www.w3.org/XML/1998/namespace"
+           elementFormDefault="unqualified">
+
+    <!--xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/-->
+
+    <xs:element name="event-action-map">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="1" ref="action-templates" />
+                <xs:element minOccurs="1" maxOccurs="1" ref="ir-commands" />
+            </xs:sequence>
+            <xs:attribute name="version" fixed="0.0.1" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Version of the schema the document claims to follow.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="action-templates">
+         <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="1" maxOccurs="unbounded" ref="action-template" />
+            </xs:sequence>
+         </xs:complexType>
+    </xs:element>
+
+    <xs:element name="parameters">
+         <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="1" maxOccurs="unbounded" ref="parameter" />
+            </xs:sequence>
+         </xs:complexType>
+    </xs:element>
+
+    <xs:element name="parameter">
+        <xs:complexType>
+            <xs:attribute name="description" type="xs:string"/>
+            <xs:attribute name="default" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="action-template">
+         <xs:complexType>
+            <xs:sequence minOccurs="1">
+                <xs:element minOccurs="0" maxOccurs="1" ref="parameters" />
+                <xs:element minOccurs="1" maxOccurs="1" ref="action" />
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:ID"/>
+         </xs:complexType>
+    </xs:element>
+
+    <xs:element name="ir-commands">
+         <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="1" maxOccurs="unbounded" ref="ir-command" />
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:ID"/>
+         </xs:complexType>
+    </xs:element>
+
+    <xs:element name="ir-command">
+        <xs:complexType>
+            <xs:sequence minOccurs="1" maxOccurs="unbounded">
+                <xs:choice>
+                    <xs:element ref="actionref" />
+                    <xs:element ref="action" />
+                </xs:choice>
+            </xs:sequence>
+            <xs:attribute name="protocol" type="xs:NMTOKEN" use="required" />
+            <xs:attribute name="D" type="xs:nonNegativeInteger" use="required" />
+            <xs:attribute name="S" type="xs:nonNegativeInteger" />
+            <xs:attribute name="F" type="xs:nonNegativeInteger" use="required" />
+            <xs:attribute default="1" name="min" type="xs:nonNegativeInteger" />
+            <xs:attribute default="9999" name="max" type="xs:nonNegativeInteger" />
+            <xs:attribute name="remote" type="xs:string" />
+            <xs:attribute name="commandName" type="xs:string" />
+            <xs:attribute name="description" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="actionref">
+        <xs:complexType>
+            <xs:attribute name="template" type="xs:IDREF" use="required" />
+            <xs:attribute name="arg1" type="xs:string"/>
+            <xs:attribute name="arg2" type="xs:string"/>
+        </xs:complexType>
+    </xs:element>
+
+  <xs:element name="action">
+    <xs:complexType>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="echo" />
+        <xs:element ref="quit" />
+        <xs:element ref="exec" />
+        <xs:element ref="wol" />
+        <xs:element ref="tcp" />
+        <xs:element ref="udp" />
+        <xs:element ref="http" />
+      </xs:choice>
+      <xs:attribute default="1" name="min" type="xs:nonNegativeInteger" />
+      <xs:attribute default="9999" name="max" type="xs:nonNegativeInteger" />
+      <xs:attribute name="description" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="echo" type="xs:string" />
+
+  <xs:element name="quit">
+    <xs:complexType />
+  </xs:element>
+
+  <xs:element name="wol">
+    <xs:complexType>
+            <!-- one of these -->
+      <xs:attribute name="mac" type="xs:string" />
+      <xs:attribute name="hostname" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="tcp">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute name="hostname" type="xs:NMTOKEN" use="required" />
+          <xs:attribute name="port" type="portNumberType" use="required" />
+          <xs:attribute default="2000" name="timeout" type="xs:nonNegativeInteger" />
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="udp">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute name="hostname" type="xs:NMTOKEN" use="required" />
+          <xs:attribute name="port" type="portNumberType" use="required" />
+          <xs:attribute default="2000" name="timeout" type="xs:nonNegativeInteger" />
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="http">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute name="url" type="xs:string" use="required" />
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="exec">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="argument" />
+      </xs:sequence>
+      <xs:attribute name="progname" type="xs:string" use="required" />
+      <xs:attribute default="true" name="wait" type="xs:boolean"/>
+        <!--xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="yes" />
+            <xs:enumeration value="no" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute-->
+      <xs:attribute name="in" type="xs:string" />
+      <xs:attribute name="out" type="xs:string" />
+      <xs:attribute name="err" type="xs:string" />
+      <xs:attribute name="directory" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="argument" type="xs:string" />
+
+  <xs:simpleType name="portNumberType">
+        <xs:annotation>
+            <xs:documentation>Number between 0 and 65535.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:nonNegativeInteger">
+            <xs:minExclusive value="0"/>
+            <xs:maxExclusive value="65535"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

@@ -1,0 +1,69 @@
+<!-- Copying and distribution of this file, with or without modification,
+     are permitted in any medium without royalty provided the copyright
+     notice and this notice are preserved.  This file is offered as-is,
+     without any warranty.
+-->
+
+<!ELEMENT event-action-map (ir-command+) >
+
+<!ELEMENT ir-command (restriction)+ >
+<!ATTLIST ir-command
+        protocol NMTOKEN #REQUIRED
+        D        NMTOKEN #REQUIRED
+        S        NMTOKEN #IMPLIED
+        F        NMTOKEN #REQUIRED
+        min      NMTOKEN "1"
+        max      NMTOKEN "9999"
+        remote   NMTOKEN #IMPLIED
+        commandName NMTOKEN #IMPLIED
+        description CDATA #IMPLIED
+ >
+
+<!ELEMENT restriction (echo|quit|log|exec|wol|tcp|udp|http)+ >
+<!ATTLIST restriction
+        min      NMTOKEN "1"
+        max      NMTOKEN "9999"
+        description CDATA #IMPLIED
+>
+
+<!ELEMENT echo (#PCDATA) >
+
+<!ELEMENT quit EMPTY >
+
+<!ELEMENT log (#PCDATA) >
+
+<!ELEMENT wol EMPTY >
+<!ATTLIST wol
+        mac CDATA #REQUIRED >
+
+<!ELEMENT tcp (#PCDATA) >
+<!ATTLIST tcp
+        host CDATA #REQUIRED
+        port CDATA #REQUIRED
+        timeout CDATA "2000"
+>
+
+<!ELEMENT udp (#PCDATA) >
+<!ATTLIST udp
+        host CDATA #REQUIRED
+        port CDATA #REQUIRED
+        timeout CDATA "2000"
+>
+
+<!ELEMENT http (#PCDATA) >
+<!ATTLIST http
+        url CDATA #REQUIRED
+>
+
+<!ELEMENT exec ( argument* ) >
+<!ATTLIST exec
+        progname CDATA #REQUIRED
+        wait (yes|no) "yes"
+        in CDATA #IMPLIED
+        out CDATA #IMPLIED
+        err CDATA #IMPLIED
+        directory CDATA #IMPLIED
+>
+
+<!ELEMENT argument (#PCDATA) >
+

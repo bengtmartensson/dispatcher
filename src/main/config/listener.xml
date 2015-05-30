@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<event-action-map xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="0.0.1" xsi:noNamespaceSchemaLocation="../schemas/event-action-map.xsd">
+    <action-templates>
+
+        <action-template id="ezcontrol-predefined-http">
+            <parameters>
+                <parameter description="predefined switch number"/>
+                <parameter description="on or off" default="on"/>
+            </parameters>
+            <action min="2">
+                <http url="http://ezcontrol/preset?switch=$1&amp;value=$2"/>
+            </action>
+        </action-template>
+
+        <action-template id="harcmacro">
+            <parameters>
+                <parameter description="command string to send"/>
+            </parameters>
+            <action min="2">
+                <udp hostname="harc" port="9998" timeout="1000">harcmacros.$1</udp>
+            </action>
+        </action-template>
+
+    </action-templates>
+
+
+    <ir-commands>
+        <!--
+        <ir-command protocol="NEC1" D="73" F="83" description="OK for Oppo">
+            <action min="6">
+                <echo>Hey mama, got OK from Oppo</echo>
+                <tcp hostname="localhost" port="44444" timeout="1000">Ok from Oppo</tcp>
+            </action>
+            <action min="1" max="5">
+                <log>Logg mama, got OK from Oppo</log>
+            </action>
+        </ir-command>
+        <ir-command protocol="NEC1" D="73" F="71" remote="Oppo"
+                    commandName="A" description="">
+            <action min = "5" description="">
+                <quit/>
+            </action>
+        </ir-command>
+        <ir-command protocol="rc5" D="0" F="0">
+            <action>
+                <echo>Got rc5 0 0</echo>
+                <udp hostname="irtrans" port="21000" timeout="2000">sndccf 0000 0073 0000 000D 0020 0020 0040 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0CC8,li</udp>
+            </action>
+        </ir-command>
+
+
+        <ir-command protocol="rc5" D="5" F="1">
+            <action>
+                <exec progname="/usr/bin/wc" in="/etc/passwd" wait="true"/>
+            </action>
+        </ir-command>
+        <ir-command protocol="rc5" D="5" F="2">
+            <action>
+                <exec progname="ls" wait="false" out="/tmp/junk"/>
+            </action>
+            <action min="5">
+                <exec progname="ls" wait="false" directory="/etc"/>
+            </action>
+        </ir-command>
+        <ir-command protocol="rc5" D="5" F="3">
+            <action>
+                <exec progname="cat" wait="true" err="/tmp/junk">
+                    <argument>/etc/shadow</argument>
+                </exec>
+            </action>
+        </ir-command>
+        <ir-command protocol="rc5" D="5" F="4">
+            <action>
+                <http url="http://ezcontrol/send?system=6&amp;hc1=13&amp;hc2=3&amp;addr=2&amp;value=255"/>
+            </action>
+        </ir-command>
+        <ir-command protocol="rc5" D="5" F="5">
+            <action>
+                <http url="http://ezcontrol/send?system=6&amp;hc1=13&amp;hc2=3&amp;addr=2&amp;value=0"/>
+            </action>
+        </ir-command>
+-->
+        <!-- WOL commands -->
+        <ir-command protocol="rc5" D="31" F="999">
+            <action>
+                <wol mac="00:00:00:00:00:00"/>
+            </action>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <action>
+                <wol hostname="box"/>
+            </action>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <action>
+                <wol hostname="epsilon"/>
+            </action>
+        </ir-command>
+
+        <ir-command protocol="rc5" D="31" F="90">
+            <actionref template="harcmacro" arg1="start_dbox_tv()"/>
+        </ir-command>
+
+        <ir-command protocol="rc5" D="31" F="91">
+            <actionref template="harcmacro" arg1="bedtime()"/>
+        </ir-command>
+
+        <ir-command protocol="rc5" D="31" F="24">
+            <actionref template="harcmacro" arg1="door_open_close()"/>
+        </ir-command>
+
+        <ir-command protocol="rc5" D="31" F="92">
+            <actionref template="harcmacro" arg1="leaving_home()"/>
+        </ir-command>
+
+        <ir-command protocol="rc5" D="31" F="93">
+            <actionref template="harcmacro" arg1="movie()"/>
+        </ir-command>
+
+        <ir-command protocol="rc5" D="31" F="94">
+            <actionref template="harcmacro" arg1="tv_mode(True)"/>
+        </ir-command>
+
+        <ir-command protocol="rc5" D="31" F="95">
+            <actionref template="harcmacro" arg1="all_up()"/>
+        </ir-command>
+
+        <!-- Ezcontrol T-10 preprogrammed commands -->
+        <!-- Use F="999" for unassigned -->
+        <ir-command protocol="rc5" D="31" F="999" description="Floorlamp_1">
+            <!-- preset_1 -->
+            <actionref template="ezcontrol-predefined-http" arg1="1" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999" description="Floorlamp_1">
+            <!-- preset_1 -->
+            <actionref template="ezcontrol-predefined-http" arg1="1" arg2="on"/>
+        </ir-command>
+
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_1 -->
+            <!-- Floorlamp_1 -->
+            <actionref template="ezcontrol-predefined-http" arg1="1" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_1 -->
+            <!-- Floorlamp_1 -->
+            <actionref template="ezcontrol-predefined-http" arg1="1" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_2 -->
+            <!-- Floorlamp_2 -->
+            <actionref template="ezcontrol-predefined-http" arg1="2" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_2 -->
+            <!-- Floorlamp_2 -->
+            <actionref template="ezcontrol-predefined-http" arg1="2" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_3 -->            <!-- Floorlamp_3 -->
+            <actionref template="ezcontrol-predefined-http" arg1="3" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_3 -->
+            <!-- Floorlamp_3 -->
+            <actionref template="ezcontrol-predefined-http" arg1="3" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="35">
+            <!-- preset_4 -->
+            <!-- Screen -->            <!--action min="2">
+                <actionref template="ezcontrol-predefined-http" arg1="4" arg2="off"/>
+            </action-->
+            <actionref template="ezcontrol-predefined-http" arg1="4" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="3">
+            <!-- preset_4 -->
+            <!-- Screen -->
+            <actionref template="ezcontrol-predefined-http" arg1="4" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_5 -->
+            <!-- work_light -->
+            <actionref template="ezcontrol-predefined-http" arg1="5" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_5 -->
+            <!-- work_light -->
+            <actionref template="ezcontrol-predefined-http" arg1="5" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_6 -->
+            <!-- water&amp -->
+            <actionref template="ezcontrol-predefined-http" arg1="6" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_6 -->
+            <!-- water&amp -->
+            <actionref template="ezcontrol-predefined-http" arg1="6" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_7 -->
+            <!-- water_lamp -->
+            <actionref template="ezcontrol-predefined-http" arg1="7" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_7 -->
+            <!-- water_lamp -->
+            <actionref template="ezcontrol-predefined-http" arg1="7" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_8 -->
+            <!-- water_wall -->
+            <actionref template="ezcontrol-predefined-http" arg1="8" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_8 -->
+            <!-- water_wall -->
+            <actionref template="ezcontrol-predefined-http" arg1="8" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="40">
+            <!-- preset_9" -->
+            <!-- large_blind -->
+            <actionref template="ezcontrol-predefined-http" arg1="9" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="8">
+            <!-- preset_9 -->
+            <!-- large_blind -->
+            <actionref template="ezcontrol-predefined-http" arg1="9" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="41">
+            <!-- preset_10" number="10" state="on">small_blind" arg2="off"/-->
+            <actionref template="ezcontrol-predefined-http" arg1="10" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="9">
+            <!-- preset_10" number="10" state="on">small_blind" arg2="off"/-->
+            <actionref template="ezcontrol-predefined-http" arg1="10" arg2="on"/>
+        </ir-command>
+        <!-- preset_11" number -->
+        <ir-command protocol="rc5" D="31" F="42">
+            <actionref template="ezcontrol-predefined-http" arg1="11" arg2="off"/>
+            <!-- balcony_blind -->
+        </ir-command>
+        <!-- preset_11" number -->
+        <ir-command protocol="rc5" D="31" F="10">
+            <actionref template="ezcontrol-predefined-http" arg1="11" arg2="on"/>
+            <!-- balcony_blind -->
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="43">
+            <!-- preset_12 -->
+            <!-- kitchen_blind -->
+            <actionref template="ezcontrol-predefined-http" arg1="12" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="11">
+            <!-- preset_12 -->
+            <!-- kitchen_blind -->
+            <actionref template="ezcontrol-predefined-http" arg1="12" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_13 -->
+            <!-- Bedroom_light -->
+            <actionref template="ezcontrol-predefined-http" arg1="13" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_13 -->
+            <!-- Bedroom_light -->
+            <actionref template="ezcontrol-predefined-http" arg1="13" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_14" state="on">Bedroom_blind -->
+            <actionref template="ezcontrol-predefined-http" arg1="14" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_14" state="on">Bedroom_blind -->
+            <actionref template="ezcontrol-predefined-http" arg1="14" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_15 -->
+            <!-- Kitchen -->
+            <actionref template="ezcontrol-predefined-http" arg1="15" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_15 -->
+            <!-- Kitchen -->
+            <actionref template="ezcontrol-predefined-http" arg1="15" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_16 -->
+            <!-- Hall&amp -->
+            <actionref template="ezcontrol-predefined-http" arg1="16" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_16 -->
+            <!-- Hall&amp -->
+            <actionref template="ezcontrol-predefined-http" arg1="16" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_17 -->
+            <!-- Floor_Fan -->
+            <actionref template="ezcontrol-predefined-http" arg1="17" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_17 -->
+            <!-- Floor_Fan -->
+            <actionref template="ezcontrol-predefined-http" arg1="17" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_18 -->
+            <!-- Desk_Fan -->
+            <actionref template="ezcontrol-predefined-http" arg1="18" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_18 -->
+            <!-- Desk_Fan -->
+            <actionref template="ezcontrol-predefined-http" arg1="18" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_19 -->
+            <!-- Bathroom_light -->
+            <actionref template="ezcontrol-predefined-http" arg1="19" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_19 -->
+            <!-- Bathroom_light -->
+            <actionref template="ezcontrol-predefined-http" arg1="19" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_20" state="on">monitor -->
+            <actionref template="ezcontrol-predefined-http" arg1="20" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_20" state="on">monitor -->
+            <actionref template="ezcontrol-predefined-http" arg1="20" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_26 -->
+            <!--  FS20test -->
+            <actionref template="ezcontrol-predefined-http" arg1="26" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_26 -->
+            <!--  FS20test -->
+            <actionref template="ezcontrol-predefined-http" arg1="26" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_27 -->
+            <!-- Conrad 434MHz -->
+            <actionref template="ezcontrol-predefined-http" arg1="27" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_27 -->
+            <!-- Conrad 434MHz -->
+            <actionref template="ezcontrol-predefined-http" arg1="27" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_28 -->
+            <!-- AB400 -->
+            <actionref template="ezcontrol-predefined-http" arg1="28" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_28 -->
+            <!-- AB400 -->
+            <actionref template="ezcontrol-predefined-http" arg1="28" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_28 -->
+            <!-- not assigned -->
+            <actionref template="ezcontrol-predefined-http" arg1="29" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_28 -->
+            <!-- not assigned -->
+            <actionref template="ezcontrol-predefined-http" arg1="29" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_29 -->
+            <!-- not assigned -->
+            <actionref template="ezcontrol-predefined-http" arg1="30" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_29 -->
+            <!-- not assigned -->
+            <actionref template="ezcontrol-predefined-http" arg1="30" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_30 -->
+            <!-- not assigned -->
+            <actionref template="ezcontrol-predefined-http" arg1="31" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_30 -->
+            <!-- not assigned -->
+            <actionref template="ezcontrol-predefined-http" arg1="31" arg2="on"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_31 -->
+            <!-- not assigned -->
+            <actionref template="ezcontrol-predefined-http" arg1="32" arg2="off"/>
+        </ir-command>
+        <ir-command protocol="rc5" D="31" F="999">
+            <!-- preset_31 -->
+            <!-- not assigned -->
+            <actionref template="ezcontrol-predefined-http" arg1="32" arg2="on"/>
+        </ir-command>
+    </ir-commands>
+</event-action-map>
