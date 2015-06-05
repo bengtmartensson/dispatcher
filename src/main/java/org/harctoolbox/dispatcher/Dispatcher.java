@@ -25,6 +25,7 @@ import gnu.io.PortInUseException;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -39,6 +40,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import javax.xml.XMLConstants;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 import org.harctoolbox.IrpMaster.IrpUtils;
 import org.harctoolbox.IrpMaster.XmlUtils;
 import org.harctoolbox.harchardware.HarcHardwareException;
@@ -50,10 +54,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-//#ifdef HAS_SIGNALS
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-//#endif
 
 public class Dispatcher {
 private final static String lineEnd = System.getProperty("line.separator");
@@ -133,6 +133,8 @@ private final static String lineEnd = System.getProperty("line.separator");
     private boolean stopRequested = false;
     private boolean restartRequested = false;
     private IStringCommand hardware;
+    private Date lastTimeAlive;
+    private int timeout = 30000; // milliseconds // FIXME
 
     private static final Logger logger = Logger.getLogger(Dispatcher.class.getName());
 
@@ -205,8 +207,13 @@ private final static String lineEnd = System.getProperty("line.separator");
         this.hardware = hardware;
     }
 
-    public Dispatcher(File configFile, File schemaFile, IStringCommand hardware) throws IOException, SAXException {
-        this(XmlUtils.openXmlFile(configFile, schemaFile, true, true), hardware);
+    public Dispatcher(File configFile, IStringCommand hardware) throws IOException, SAXException {
+        this(XmlUtils.openXmlFile(configFile, readSchemaFromUrl(Dispatcher.class.getResource("/schemas/event-action-map.xsd")),
+                true, true), hardware);
+    }
+
+    private static Schema readSchemaFromUrl(URL schemaFile) throws SAXException {
+        return (SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)).newSchema(schemaFile);
     }
 
     public boolean listen(boolean increment) throws HarcHardwareException, IOException {
@@ -220,6 +227,7 @@ private final static String lineEnd = System.getProperty("line.separator");
             hardware.open();
 
         logger.info("Listen started");
+        lastTimeAlive = new Date();
         int noTransmissions = 0;
         IrCommand old = null;
         IrCommand irCommand = null;
@@ -238,11 +246,19 @@ private final static String lineEnd = System.getProperty("line.separator");
                     }
                 }
                 String line = hardware.readString(); // may block
-                if (/*debug > 0 &&*/ line != null && !line.isEmpty())
+                if (/*debug > 0 &&*/ line != null && !line.isEmpty()) {
                     //System.out.println(line);
                     logger.finest(line);
+                    lastTimeAlive = new Date();
+                } else {
+                    if ((int) ((new Date()).getTime() - lastTimeAlive.getTime()) > timeout) {
+                        logger.warning("Hardware is pining for the fjords, restarting.");
+                        restartRequested = true;
+                        stopRequested = true;
+                    }
+                }
 
-                if (line == null || line.isEmpty() || line.equals("undecoded"))
+                if (line == null || line.isEmpty() || line.equals("undecoded") || line.equals("."))
                     irCommand = null;
                 else {
                     String[] parts = line.trim().split("\\s+");
@@ -267,7 +283,7 @@ private final static String lineEnd = System.getProperty("line.separator");
                             }
                             irCommand = new IrCommand(protocol, D, S, F);
                         } catch (NumberFormatException | ArrayIndexOutOfBoundsException ex) {
-                            logger.log(Level.WARNING, "Unparsable entry: {0}", line);
+                            logger.log(Level.INFO, "Unparsable entry: {0}", line);
                             irCommand = null;
                         }
                     }
@@ -283,6 +299,10 @@ private final static String lineEnd = System.getProperty("line.separator");
                 }
                 if (irCommand != null)
                     logger.finest(irCommand.toString());
+            }
+            if (LocalSerialPortBuffered.class.isInstance(hardware)) {
+                LocalSerialPortBuffered lspb = (LocalSerialPortBuffered) hardware;
+                logger.log(Level.INFO, "Closing {0}", lspb.getActualPortName());
             }
             hardware.close();
         } catch (IOException ex) {
@@ -344,7 +364,7 @@ private final static String lineEnd = System.getProperty("line.separator");
         private int baud = 115200;
 
         @Parameter(names = {"-c", "--config"}, description = "Path to the configuration file")
-        private String configFilename = "listener.xml";
+        private String configFilename = "src/main/config/listener.xml"; // FIXME
 
         @Parameter(names = {"-d", "--device"}, description = "Device name, e.g. COM7: or /dev/ttyUSB0")
         private String device = null;
@@ -367,8 +387,8 @@ private final static String lineEnd = System.getProperty("line.separator");
         @Parameter(names = {"-p", "--port"}, description = "Port number")
         private int port = defaultPort;
 
-        @Parameter(names = {"-s", "--schema"}, description = "Schema file")
-        private String schemaFileName = "schemas/event-action-map.xsd";
+        //@Parameter(names = {"-s", "--schema"}, description = "Schema file")
+        //private String schemaFileName = "src/main/schemas/event-action-map.xsd"; // FIXME
 
         @Parameter(names = {"-V", "--version"}, description = "Display version information")
         private boolean versionRequested;
@@ -450,25 +470,7 @@ private final static String lineEnd = System.getProperty("line.separator");
         }
 
         try {
-            final Dispatcher dispatcher = new Dispatcher(new File(commandLineArgs.configFilename),
-                    new File(commandLineArgs.schemaFileName),
-                    hardware);
-//#ifdef HAS_SIGNALS
-            Signal.handle(new Signal("INT"), new SignalHandler() {
-                @Override
-                public void handle(Signal signal) {
-                    System.err.println("Got SIGINT, quitting...");
-                    dispatcher.requestStop();
-                }
-            });
-            Signal.handle(new Signal("HUP"), new SignalHandler() {
-                @Override
-                public void handle(Signal signal) {
-                    System.err.println("Got SIGHUP, restarting...");
-                    dispatcher.requestRestart();
-                }
-            });
-//#endif
+            final Dispatcher dispatcher = new Dispatcher(new File(commandLineArgs.configFilename), hardware);
             dispatcher.setVerbosity(commandLineArgs.verbose);
             boolean restart;
             do {

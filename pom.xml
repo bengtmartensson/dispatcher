@@ -7,7 +7,7 @@
     <groupId>org.harctoolbox</groupId>
     <artifactId>Dispatcher</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <name>Dispatcher</name>
     <!--parent>
         <groupId>org.harctoolbox</groupId>
@@ -80,7 +80,7 @@
                                 </fileMapper>
                             </fileMappers>
                         </transformationSet>
-                        <transformationSet>
+                        <!--transformationSet>
                             <dir>src/main/xdocs</dir>
                             <outputDir>
                                 ${project.build.directory}/generated-documents
@@ -94,7 +94,7 @@
                                     <targetExtension>.html</targetExtension>
                                 </fileMapper>
                             </fileMappers>
-                        </transformationSet>
+                        </transformationSet-->
                     </transformationSets>
                     <catalogs>
                         <catalog>../harctoolboxbundle/schemas/catalog.xml</catalog>
@@ -112,13 +112,21 @@
             </plugin>
 
             <!-- Source and binary tarballs from src/assembly/* files. -->
-            <!--plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
-                    <!- -descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>${project.groupId}.dispatcher.${project.name}</mainClass>
+                        </manifest>
+                        <!--manifestEntries>
+                            <SplashScreen-Image>images/splash.png</SplashScreen-Image>
+                        </manifestEntries-->
+                    </archive>
+                    <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs- ->
+                    </descriptorRefs>
                     <descriptors>
                         <descriptor>src/assembly/target.xml</descriptor>
                     </descriptors>
@@ -132,7 +140,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin-->
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -141,6 +149,37 @@
                 <configuration>
                     <showDeprecation>true</showDeprecation>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.harctoolbox.dispatcher.Dispatcher</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.9.1</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/xml</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
