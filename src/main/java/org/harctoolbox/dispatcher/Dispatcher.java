@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2014 Bengt Martensson.
+Copyright (C) 2014,2015 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class Dispatcher {
-private final static String lineEnd = System.getProperty("line.separator");
+    private final static String lineEnd = System.getProperty("line.separator");
 
     static class MyFormatter extends Formatter {
 
@@ -127,14 +127,12 @@ private final static String lineEnd = System.getProperty("line.separator");
         }
     }
 
-    public final static int defaultPort = 22222;
-    //private int debug = 0;
     private boolean verbose = false;
     private boolean stopRequested = false;
     private boolean restartRequested = false;
-    private IStringCommand hardware;
+    private final IStringCommand hardware;
     private Date lastTimeAlive;
-    private int timeout = 30000; // milliseconds // FIXME
+    private final int timeout; // seconds
 
     private static final Logger logger = Logger.getLogger(Dispatcher.class.getName());
 
@@ -142,6 +140,7 @@ private final static String lineEnd = System.getProperty("line.separator");
     private HashMap<String, Element> actionRefs = new HashMap<>();
 
     /**
+     * Set verbosity.
      * @param verbose
      */
     public void setVerbosity(boolean verbose) {
@@ -149,14 +148,22 @@ private final static String lineEnd = System.getProperty("line.separator");
     }
 
     /**
+     * Causes the listener to be stopped.
      */
     public void requestStop() {
         stopRequested = true;
     }
 
+    /**
+     * Causes the listener to be stopped and subsequently restarted.
+     */
     public void requestRestart() {
         stopRequested = true;
         restartRequested = true;
+    }
+
+    private int seconds2microseconds(int secs) {
+        return 1000*secs;
     }
 
     private void parseDoc(Document doc) {
@@ -202,20 +209,44 @@ private final static String lineEnd = System.getProperty("line.separator");
         }
     }
 
-    public Dispatcher(Document doc, IStringCommand hardware) throws IOException {
+    /**
+     * Constructor for Dispatcher.
+     * @param doc Event-action map
+     * @param hardware Hardware to listen  to (IStringCommand)
+     * @param timeout Timeout in seconds, to restart the listener.
+     * @throws IOException
+     */
+    public Dispatcher(Document doc, IStringCommand hardware, int timeout) throws IOException {
         parseDoc(doc);
         this.hardware = hardware;
+        this.timeout = timeout;
     }
 
-    public Dispatcher(File configFile, IStringCommand hardware) throws IOException, SAXException {
+    /**
+     * Constructor for Dispatcher.
+     * @param configFile Event-action map
+     * @param hardware Hardware to listen  to (IStringCommand)
+     * @param timeout Timeout in seconds, to restart the listener.
+     * @throws IOException
+     * @throws org.xml.sax.SAXException Parse problem is configFile.
+     */
+    public Dispatcher(File configFile, IStringCommand hardware, int timeout) throws IOException, SAXException {
         this(XmlUtils.openXmlFile(configFile, readSchemaFromUrl(Dispatcher.class.getResource("/schemas/event-action-map.xsd")),
-                true, true), hardware);
+                true, true), hardware, timeout);
     }
 
     private static Schema readSchemaFromUrl(URL schemaFile) throws SAXException {
         return (SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)).newSchema(schemaFile);
     }
 
+    /**
+     * Listener loop.
+     *
+     * @param increment Try incrementing device names.
+     * @return True if restart is requested.
+     * @throws HarcHardwareException
+     * @throws IOException
+     */
     public boolean listen(boolean increment) throws HarcHardwareException, IOException {
         restartRequested = false;
         stopRequested = false;
@@ -245,13 +276,13 @@ private final static String lineEnd = System.getProperty("line.separator");
                         noTransmissions = 0;
                     }
                 }
-                String line = hardware.readString(); // may block
-                if (/*debug > 0 &&*/ line != null && !line.isEmpty()) {
-                    //System.out.println(line);
+                String line = hardware.readString(); // does not block
+                if (line != null && !line.isEmpty()) {
                     logger.finest(line);
                     lastTimeAlive = new Date();
                 } else {
-                    if ((int) ((new Date()).getTime() - lastTimeAlive.getTime()) > timeout) {
+                    if (timeout > 0
+                            && (int) ((new Date()).getTime() - lastTimeAlive.getTime()) > seconds2microseconds(timeout)) {
                         logger.warning("Hardware is pining for the fjords, restarting.");
                         restartRequested = true;
                         stopRequested = true;
@@ -338,7 +369,6 @@ private final static String lineEnd = System.getProperty("line.separator");
             try {
                 boolean success = action.action();
                 if (!success)
-                    //System.err.println(action + " failed.");
                     logger.log(Level.WARNING, "{0} failed", action.toString());
             } catch (IOException ex) {
                 logger.log(Level.SEVERE, "IOException", ex);
@@ -375,20 +405,20 @@ private final static String lineEnd = System.getProperty("line.separator");
         @Parameter(names = {"-i", "--ip"}, description = "IP address or name")
         private String ip = null;
 
-        @Parameter(names = {"-I", "--increment"}, description = "Increment the device if necessary")
+        @Parameter(names = {"-I", "--increment"}, description = "Try incrementing the device name if necessary")
         private boolean increment = false;
 
         @Parameter(names = {"-l", "--logfile"}, description = "Logfile")
         private String logfile = null;
 
-        @Parameter(names = {"-L", "--loglevel"}, description = "Loglevel (ALL, FINE, INFO, SEVERE, WARNING, OFF,...)")
+        @Parameter(names = {"-L", "--loglevel"}, description = "Loglevel (ALL, FINEST, FINE, INFO, SEVERE, WARNING, OFF,...)")
         private String loglevel = "INFO";
 
         @Parameter(names = {"-p", "--port"}, description = "Port number")
-        private int port = defaultPort;
+        private int port = 33333;
 
-        //@Parameter(names = {"-s", "--schema"}, description = "Schema file")
-        //private String schemaFileName = "src/main/schemas/event-action-map.xsd"; // FIXME
+        @Parameter(names = {"-t", "--timeout"}, description = "Timeout for device, in seconds")
+        private int timeout = 30;
 
         @Parameter(names = {"-V", "--version"}, description = "Display version information")
         private boolean versionRequested;
@@ -400,6 +430,10 @@ private final static String lineEnd = System.getProperty("line.separator");
     private static JCommander argumentParser;
     private static CommandLineArgs commandLineArgs = new CommandLineArgs();
 
+    /**
+     * Main function for the program.
+     * @param args
+     */
     public static void main(String[] args) {
         argumentParser = new JCommander(commandLineArgs);
         argumentParser.setProgramName("Dispatcher");
@@ -470,7 +504,7 @@ private final static String lineEnd = System.getProperty("line.separator");
         }
 
         try {
-            final Dispatcher dispatcher = new Dispatcher(new File(commandLineArgs.configFilename), hardware);
+            final Dispatcher dispatcher = new Dispatcher(new File(commandLineArgs.configFilename), hardware, commandLineArgs.timeout);
             dispatcher.setVerbosity(commandLineArgs.verbose);
             boolean restart;
             do {

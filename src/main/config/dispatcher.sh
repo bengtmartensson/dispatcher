@@ -1,11 +1,25 @@
 #!/bin/sh
+# Example wrapper to start Dispatcher
+# For Unix-like systems
 
-#JAVA_HOME=/opt/jre1.7.0_55
-#JAVA=${JAVA_HOME}/bin/java
 JAVA=java
 DISPATCHER_HOME=/usr/local/dispatcher
+RXTX_LOCATION=/usr/lib64/rxtx
+VERSION=0.0.2
+# Requires suitable udev rules
+DEVICE=/dev/arduino
+BAUD=115200
 
-cd ${DISPATCHER_HOME}
-echo $$ > /var/run/dispatcher.pid
+LOGFILE=/var/log/dispatcher.log
+if touch ${LOGFILE} >/dev/null 2>&1 ; then
+    true ;
+else
+    LOGFILE=${HOME}/dispatcher.log ;
+fi
 
-exec ${JAVA} -Djava.library.path=/usr/local/lib -jar ${DISPATCHER_HOME}/dist/Dispatcher.jar --config ${DISPATCHER_HOME}/listener.xml --device /dev/ttyUSB0 --increment --baud 115200 --logfile /var/log/dispatcher.log
+#echo $$ > /var/run/dispatcher.pid
+
+exec ${JAVA} -Djava.library.path=${RXTX_LOCATION} -jar ${DISPATCHER_HOME}/Dispatcher-${VERSION}-jar-with-dependencies.jar \
+     --config ${DISPATCHER_HOME}/listener.xml \
+     --device ${DEVICE} --baud ${BAUD} \
+     --logfile ${LOGFILE}
