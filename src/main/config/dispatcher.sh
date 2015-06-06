@@ -7,6 +7,7 @@ DISPATCHER_HOME=/usr/local/dispatcher
 RXTX_LOCATION=/usr/lib64/rxtx
 VERSION=0.0.2
 # Requires suitable udev rules
+# Use the most sprecific name possible, preferrably with unique serial
 DEVICE=/dev/arduino
 BAUD=115200
 
@@ -17,9 +18,13 @@ else
     LOGFILE=${HOME}/dispatcher.log ;
 fi
 
-#echo $$ > /var/run/dispatcher.pid
+PIDFILE=/var/run/dispatcher.pid
+if touch ${PIDFILE} >/dev/null 2>&1 ; then
+    echo $$ > ${PIDFILE}
+fi
 
-exec ${JAVA} -Djava.library.path=${RXTX_LOCATION} -jar ${DISPATCHER_HOME}/Dispatcher-${VERSION}-jar-with-dependencies.jar \
+exec ${JAVA} -Djava.library.path=${RXTX_LOCATION} \
+     -jar ${DISPATCHER_HOME}/Dispatcher-${VERSION}-jar-with-dependencies.jar \
      --config ${DISPATCHER_HOME}/listener.xml \
      --device ${DEVICE} --baud ${BAUD} \
      --logfile ${LOGFILE}

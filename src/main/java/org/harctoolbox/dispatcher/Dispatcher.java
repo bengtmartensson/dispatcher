@@ -278,7 +278,7 @@ public class Dispatcher {
                 }
                 String line = hardware.readString(); // does not block
                 if (line != null && !line.isEmpty()) {
-                    logger.finest(line);
+                    logger.log(Level.FINEST, "\"{0}\"", line);
                     lastTimeAlive = new Date();
                 } else {
                     if (timeout > 0
@@ -289,7 +289,7 @@ public class Dispatcher {
                     }
                 }
 
-                if (line == null || line.isEmpty() || line.equals("undecoded") || line.equals("."))
+                if (line == null || line.isEmpty() || line.equals("undecoded") || line.equals(".") || line.equals(":"))
                     irCommand = null;
                 else {
                     String[] parts = line.trim().split("\\s+");
@@ -314,7 +314,7 @@ public class Dispatcher {
                             }
                             irCommand = new IrCommand(protocol, D, S, F);
                         } catch (NumberFormatException | ArrayIndexOutOfBoundsException ex) {
-                            logger.log(Level.INFO, "Unparsable entry: {0}", line);
+                            logger.log(Level.INFO, "Unparsable entry: \"{0}\"", line);
                             irCommand = null;
                         }
                     }
@@ -414,6 +414,9 @@ public class Dispatcher {
         @Parameter(names = {"-L", "--loglevel"}, description = "Loglevel (ALL, FINEST, FINE, INFO, SEVERE, WARNING, OFF,...)")
         private String loglevel = "INFO";
 
+        @Parameter(names = {"-m", "--maxtries"}, description = "Number of times to try reopening the device")
+        private int maxTries = 5;
+
         @Parameter(names = {"-p", "--port"}, description = "Port number")
         private int port = 33333;
 
@@ -425,6 +428,9 @@ public class Dispatcher {
 
         @Parameter(names = {"-v", "--verbose"}, description = "Execute commands verbosely")
         private boolean verbose;
+
+        @Parameter(names = {"-w", "--wait"}, description = "Time in seconds between reopening attempts")
+        private int waitTime = 10;
     }
 
     private static JCommander argumentParser;
@@ -488,7 +494,7 @@ public class Dispatcher {
                 hardware = new LocalSerialPortBuffered(commandLineArgs.device, commandLineArgs.baud, commandLineArgs.verbose);
             } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException ex) {
                 System.err.println(ex.getMessage());
-                doExit(3);
+                doExit(1);
             }
         else if (commandLineArgs.ip != null) {
             try {
@@ -496,23 +502,53 @@ public class Dispatcher {
                 hardware = new TcpSocketPort(commandLineArgs.ip, commandLineArgs.port, commandLineArgs.verbose, TcpSocketPort.ConnectionMode.keepAlive);
             } catch (UnknownHostException ex) {
                 System.err.println(ex.getMessage());
-                doExit(3);
+                doExit(1);
             }
         } else {
             System.err.println("Either device or ip must be given.");
             doExit(1);
         }
 
+        System.err.println("Starting " + Version.versionString);
+        int waitTime = commandLineArgs.waitTime;
+        int maxTries = commandLineArgs.maxTries;
+        Dispatcher dispatcher = null;
         try {
-            final Dispatcher dispatcher = new Dispatcher(new File(commandLineArgs.configFilename), hardware, commandLineArgs.timeout);
+            dispatcher = new Dispatcher(new File(commandLineArgs.configFilename), hardware, commandLineArgs.timeout);
             dispatcher.setVerbosity(commandLineArgs.verbose);
-            boolean restart;
-            do {
-                restart = dispatcher.listen(commandLineArgs.increment);
-            } while (restart);
-        } catch (SAXException | HarcHardwareException | IOException ex) {
-            System.err.println(ex.getMessage());
+        } catch (IOException | SAXException ex) {
+            System.err.println("Could not initialize: " + ex.getMessage());
+            logger.log(Level.SEVERE, "Error in constructor", ex);
             doExit(2);
         }
+
+        boolean restart = false;
+        int tries = 0;
+        boolean virgin = true;
+        do {
+            try {
+                restart = dispatcher.listen(commandLineArgs.increment);
+                tries = 0;
+                virgin = false;
+            } catch (HarcHardwareException | IOException ex) {
+                // There are some severe problems (likely gnu.io.NoSuchPortException) if I got here.
+                // If it is the first time, or too many retries, quit,...
+                if (++tries >= maxTries || virgin) {
+                    System.err.println(ex.getMessage());
+                    logger.severe(ex.getMessage());
+                    if (!virgin)
+                        logger.log(Level.SEVERE, "Too many retries ({0}), giving up.", maxTries);
+                    doExit(4);
+                }
+                // ... otherwise we wait a while and try again.
+                logger.log(Level.SEVERE, "Problem in listener: {0}", ex.getMessage());
+                logger.log(Level.INFO, "Waiting {0} seconds, then trying {1} more time(s).", new Object[]{waitTime, maxTries - tries});
+                try {
+                    Thread.sleep(1000L * waitTime);
+                } catch (InterruptedException ex1) {
+                }
+            }
+        } while (restart);
+        logger.info("Normal shutdown");
     }
 }

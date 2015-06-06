@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<event-action-map xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="0.0.1" xsi:noNamespaceSchemaLocation="../schemas/event-action-map.xsd">
+<event-action-map xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:noNamespaceSchemaLocation="../resources/schemas/event-action-map.xsd">
     <action-templates>
 
         <action-template id="ezcontrol-predefined-http">
@@ -25,8 +26,7 @@
 
 
     <ir-commands>
-        <!--
-        <ir-command protocol="NEC1" D="73" F="83" description="OK for Oppo">
+        <!--ir-command protocol="NEC1" D="73" F="83" description="OK for Oppo">
             <action min="6">
                 <echo>Hey mama, got OK from Oppo</echo>
                 <tcp hostname="localhost" port="44444" timeout="1000">Ok from Oppo</tcp>
@@ -34,14 +34,14 @@
             <action min="1" max="5">
                 <log>Logg mama, got OK from Oppo</log>
             </action>
-        </ir-command>
+        </ir-command-->
         <ir-command protocol="NEC1" D="73" F="71" remote="Oppo"
                     commandName="A" description="">
             <action min = "5" description="">
                 <quit/>
             </action>
         </ir-command>
-        <ir-command protocol="rc5" D="0" F="0">
+        <!--ir-command protocol="rc5" D="0" F="0">
             <action>
                 <echo>Got rc5 0 0</echo>
                 <udp hostname="irtrans" port="21000" timeout="2000">sndccf 0000 0073 0000 000D 0020 0020 0040 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0CC8,li</udp>
