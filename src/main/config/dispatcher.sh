@@ -27,4 +27,4 @@ exec ${JAVA} -Djava.library.path=${RXTX_LOCATION} \
      -jar ${DISPATCHER_HOME}/Dispatcher-${VERSION}-jar-with-dependencies.jar \
      --config ${DISPATCHER_HOME}/listener.xml \
      --device ${DEVICE} --baud ${BAUD} \
-     --logfile ${LOGFILE}
+     --logfile ${LOGFILE} --loglevel FINEST

@@ -94,6 +94,7 @@
       <xs:choice minOccurs="1" maxOccurs="unbounded">
         <xs:element ref="echo" />
         <xs:element ref="quit" />
+        <xs:element ref="restart" />
         <xs:element ref="exec" />
         <xs:element ref="wol" />
         <xs:element ref="tcp" />
@@ -109,6 +110,10 @@
   <xs:element name="echo" type="xs:string" />
 
   <xs:element name="quit">
+    <xs:complexType />
+  </xs:element>
+
+  <xs:element name="restart">
     <xs:complexType />
   </xs:element>
 

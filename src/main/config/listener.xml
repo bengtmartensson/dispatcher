@@ -41,6 +41,12 @@
                 <quit/>
             </action>
         </ir-command>
+        <ir-command protocol="NEC1" D="73" F="75" remote="Oppo"
+                    commandName="B" description="">
+            <action min = "5" description="">
+                <restart/>
+            </action>
+        </ir-command>
         <!--ir-command protocol="rc5" D="0" F="0">
             <action>
                 <echo>Got rc5 0 0</echo>
@@ -86,7 +92,7 @@
                 <wol mac="00:00:00:00:00:00"/>
             </action>
         </ir-command>
-        <ir-command protocol="rc5" D="31" F="999">
+        <ir-command protocol="rc5" D="31" F="80">
             <action>
                 <wol hostname="box"/>
             </action>

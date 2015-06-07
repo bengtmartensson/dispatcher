@@ -21,18 +21,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 class Http extends AbstractAction {
     URL url = null;
 
-    Http(String url) throws MalformedURLException {
-        this.url = new URL(url);
+    Http(String url) {
+        try {
+            this.url = new URL(url);
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(Dispatcher.class.getName()).log(Level.WARNING, ex.getMessage());
+        }
     }
 
     @Override
     boolean action() throws IOException {
-          //if (verbose)
-        //  System.err.println("Getting URL " + url);
+        Logger.getLogger(Dispatcher.class.getName()).log(Level.FINE, "Getting URL {0}", url);
         if (url == null)
             return false;
         InputStream junk = url.openStream();
@@ -42,7 +47,7 @@ class Http extends AbstractAction {
 
     @Override
     public String toString() {
-        return url.toString();
+        return url != null ? url.toString() : "Invalid Http";
     }
 
 }

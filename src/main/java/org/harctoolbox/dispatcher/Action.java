@@ -17,10 +17,9 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.dispatcher;
 
-import java.io.FileNotFoundException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
-import org.harctoolbox.harchardware.HarcHardwareException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -67,7 +66,6 @@ class Action {
         NodeList nl = element.getChildNodes();
         actions = new ArrayList<>();
         for (int i = 0; i < nl.getLength(); i++) {
-            try {
                 if (nl.item(i).getNodeType() != Node.ELEMENT_NODE)
                     continue;
                 Element el = (Element) nl.item(i);
@@ -117,12 +115,12 @@ class Action {
                                 substitute(el.getAttribute("err"), params));
                         break;
                     default:
-                        System.err.println("Unknown action " + type);
+                        Logger.getLogger(Dispatcher.class.getName()).log(Level.INFO, "Unknown action {0}", type);
                 }
                 actions.add(action);
-            } catch (HarcHardwareException | MalformedURLException | FileNotFoundException ex) {
-                System.err.println(ex.getMessage());
-            }
+            //} catch (HarcHardwareException | MalformedURLException | FileNotFoundException ex) {
+            //    Logger.getLogger(Dispatcher.class.getName()).warning(ex.getMessage());
+            //}
         }
     }
 }

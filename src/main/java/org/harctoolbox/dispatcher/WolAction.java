@@ -19,25 +19,37 @@ package org.harctoolbox.dispatcher;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.comm.Wol;
 
 class WolAction extends AbstractAction {
-    private final Wol wol;
+    private Wol wol = null;
+    private String history;
 
-    WolAction(String ethernetAddressString, String hostname) throws FileNotFoundException, HarcHardwareException {
+    WolAction(String ethernetAddressString, String hostname) {
+        history = hostname + "/" + ethernetAddressString;
         String str = ethernetAddressString.isEmpty() ? hostname : ethernetAddressString;
-        wol = new Wol(str);
+        try {
+            wol = new Wol(str);
+        } catch (FileNotFoundException|HarcHardwareException ex) {
+            Logger.getLogger(Dispatcher.class.getName()).log(Level.SEVERE, "Can not resolve \"{0}\" to MAC address", str);
+        }
     }
 
     @Override
     boolean action() throws IOException {
-        wol.wol();
-        return true;
+        if (wol != null) {
+            wol.wol();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
     public String toString() {
-        return wol.toString();
+        return wol != null ? wol.toString() : "Invalid WolAction: " + history;
     }
 }

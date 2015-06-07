@@ -17,6 +17,8 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.dispatcher;
 
+import java.util.logging.Logger;
+
 class Quit extends AbstractAction {
     Dispatcher owner;
 
@@ -27,7 +29,7 @@ class Quit extends AbstractAction {
     @Override
     boolean action() {
         owner.requestStop();
-        System.err.println("Quit executed");
+        Logger.getLogger(Dispatcher.class.getName()).info("Quit requested");
         return true;
     }
 

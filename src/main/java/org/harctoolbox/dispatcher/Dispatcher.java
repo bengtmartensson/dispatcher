@@ -253,7 +253,8 @@ public class Dispatcher {
         if (LocalSerialPortBuffered.class.isInstance(hardware)) {
             LocalSerialPortBuffered lspb = (LocalSerialPortBuffered) hardware;
             lspb.open(increment);
-            logger.log(Level.INFO, "Opened {0}", lspb.getActualPortName());
+            logger.log(Level.INFO, "Opened {0} ({1})", new Object[]{lspb.getPortName(), lspb.getActualPortName()});
+            lspb.dropDTR(500); // Force reset of Arduino
         } else
             hardware.open();
 
@@ -363,15 +364,16 @@ public class Dispatcher {
 
     private void executeActions(ArrayList<AbstractAction> actions, String triggerName) {
         for (AbstractAction action : actions) {
-            if (verbose)
-                System.out.print(" " + action);
             logger.log(Level.INFO, "{0} -> {1}", new Object[]{triggerName, action});
             try {
                 boolean success = action.action();
-                if (!success)
-                    logger.log(Level.WARNING, "{0} failed", action.toString());
+                if (success)
+                    logger.log(Level.FINE, "Action {0} succeeded", action.toString());
+                else
+                    logger.log(Level.WARNING, "Action {0} failed", action.toString());
             } catch (IOException ex) {
-                logger.log(Level.SEVERE, "IOException", ex);
+                logger.log(Level.SEVERE, "Action {0} threw IOException: {1}",
+                        new Object[]{action.toString(), ex.getMessage()});
             }
         }
     }
@@ -415,7 +417,7 @@ public class Dispatcher {
         private String loglevel = "INFO";
 
         @Parameter(names = {"-m", "--maxtries"}, description = "Number of times to try reopening the device")
-        private int maxTries = 5;
+        private int maxTries = 10;
 
         @Parameter(names = {"-p", "--port"}, description = "Port number")
         private int port = 33333;
@@ -510,6 +512,7 @@ public class Dispatcher {
         }
 
         System.err.println("Starting " + Version.versionString);
+        logger.info("Starting " + Version.versionString);
         int waitTime = commandLineArgs.waitTime;
         int maxTries = commandLineArgs.maxTries;
         Dispatcher dispatcher = null;
@@ -536,7 +539,9 @@ public class Dispatcher {
                 if (++tries >= maxTries || virgin) {
                     System.err.println(ex.getMessage());
                     logger.severe(ex.getMessage());
-                    if (!virgin)
+                    if (virgin)
+                        System.err.println("Cannot open the hardware, exiting.");
+                    else
                         logger.log(Level.SEVERE, "Too many retries ({0}), giving up.", maxTries);
                     doExit(4);
                 }

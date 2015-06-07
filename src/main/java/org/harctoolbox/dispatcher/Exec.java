@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 class Exec extends AbstractAction {
 
@@ -71,7 +72,7 @@ class Exec extends AbstractAction {
             try {
                 errorCode = process.waitFor();
             } catch (InterruptedException ex) {
-                System.err.println(ex.getMessage());
+                Logger.getLogger(Dispatcher.class.getName()).warning(ex.getMessage());
             }
         }
         return errorCode == 0;

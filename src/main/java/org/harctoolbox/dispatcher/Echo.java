@@ -17,6 +17,8 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.dispatcher;
 
+import java.util.logging.Logger;
+
 class Echo extends AbstractAction {
     private final String payload;
 
@@ -27,6 +29,7 @@ class Echo extends AbstractAction {
     @Override
     boolean action() {
         System.out.println(payload);
+        Logger.getLogger(Dispatcher.class.getName()).info("echoing \"payload\"");
         return true;
     }
 

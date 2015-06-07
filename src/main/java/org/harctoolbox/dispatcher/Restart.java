@@ -17,6 +17,8 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.dispatcher;
 
+import java.util.logging.Logger;
+
 class Restart extends AbstractAction {
     Dispatcher owner;
 
@@ -27,7 +29,7 @@ class Restart extends AbstractAction {
     @Override
     boolean action() {
         owner.requestRestart();
-        System.err.println("Restart executed");
+        Logger.getLogger(Dispatcher.class.getName()).info("Restart requested");
         return true;
     }
 
