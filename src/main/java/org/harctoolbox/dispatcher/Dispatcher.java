@@ -475,11 +475,15 @@ public class Dispatcher {
 
         Handler handler = null;
         if (commandLineArgs.logfile != null) {
+            String filename = commandLineArgs.logfile;
+            boolean append = filename.startsWith("+");
+            if (append)
+                filename = filename.substring(1);
             try {
-                handler = new FileHandler(commandLineArgs.logfile);
+                handler = new FileHandler(filename, append);
             } catch (IOException | SecurityException ex) {
                 System.err.println(ex.getMessage());
-                System.exit(4);
+                System.exit(IrpUtils.exitIoError);
             }
         } else {
             handler = new ConsoleHandler();
@@ -496,7 +500,7 @@ public class Dispatcher {
                 hardware = new LocalSerialPortBuffered(commandLineArgs.device, commandLineArgs.baud, commandLineArgs.verbose);
             } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException ex) {
                 System.err.println(ex.getMessage());
-                doExit(1);
+                doExit(IrpUtils.exitIoError);
             }
         else if (commandLineArgs.ip != null) {
             try {
@@ -504,11 +508,11 @@ public class Dispatcher {
                 hardware = new TcpSocketPort(commandLineArgs.ip, commandLineArgs.port, commandLineArgs.verbose, TcpSocketPort.ConnectionMode.keepAlive);
             } catch (UnknownHostException ex) {
                 System.err.println(ex.getMessage());
-                doExit(1);
+                doExit(IrpUtils.exitIoError);
             }
         } else {
             System.err.println("Either device or ip must be given.");
-            doExit(1);
+            doExit(IrpUtils.exitSemanticUsageError);
         }
 
         System.err.println("Starting " + Version.versionString);
@@ -519,10 +523,14 @@ public class Dispatcher {
         try {
             dispatcher = new Dispatcher(new File(commandLineArgs.configFilename), hardware, commandLineArgs.timeout);
             dispatcher.setVerbosity(commandLineArgs.verbose);
-        } catch (IOException | SAXException ex) {
+        } catch (IOException ex) {
             System.err.println("Could not initialize: " + ex.getMessage());
             logger.log(Level.SEVERE, "Error in constructor", ex);
-            doExit(2);
+            doExit(IrpUtils.exitIoError);
+        } catch (SAXException ex) {
+            System.err.println("Could not read configuration file: " + ex.getMessage());
+            logger.log(Level.SEVERE, "Configuration error file {0}", ex.getMessage());
+            doExit(IrpUtils.exitXmlError);
         }
 
         boolean restart = false;
@@ -543,7 +551,7 @@ public class Dispatcher {
                         System.err.println("Cannot open the hardware, exiting.");
                     else
                         logger.log(Level.SEVERE, "Too many retries ({0}), giving up.", maxTries);
-                    doExit(4);
+                    doExit(IrpUtils.exitIoError);
                 }
                 // ... otherwise we wait a while and try again.
                 logger.log(Level.SEVERE, "Problem in listener: {0}", ex.getMessage());
