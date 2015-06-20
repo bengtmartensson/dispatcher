@@ -495,14 +495,14 @@ public class Dispatcher {
         logger.setLevel(logLevel);
 
         IStringCommand hardware = null;
-        if (commandLineArgs.device != null)
+        if (commandLineArgs.device != null) {
             try {
                 hardware = new LocalSerialPortBuffered(commandLineArgs.device, commandLineArgs.baud, commandLineArgs.verbose);
             } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException ex) {
                 System.err.println(ex.getMessage());
                 doExit(IrpUtils.exitIoError);
             }
-        else if (commandLineArgs.ip != null) {
+        } else if (commandLineArgs.ip != null) {
             try {
                 // FIXME untested
                 hardware = new TcpSocketPort(commandLineArgs.ip, commandLineArgs.port, commandLineArgs.verbose, TcpSocketPort.ConnectionMode.keepAlive);
