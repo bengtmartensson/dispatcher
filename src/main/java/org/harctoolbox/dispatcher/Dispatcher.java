@@ -46,7 +46,7 @@ import javax.xml.validation.SchemaFactory;
 import org.harctoolbox.IrpMaster.IrpUtils;
 import org.harctoolbox.IrpMaster.XmlUtils;
 import org.harctoolbox.harchardware.HarcHardwareException;
-import org.harctoolbox.harchardware.IStringCommand;
+import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.comm.LocalSerialPortBuffered;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
 import org.w3c.dom.Document;
@@ -128,9 +128,10 @@ public class Dispatcher {
     }
 
     private boolean verbose = false;
+    private boolean girs;
     private boolean stopRequested = false;
     private boolean restartRequested = false;
-    private final IStringCommand hardware;
+    private final ICommandLineDevice hardware;
     private Date lastTimeAlive;
     private final int timeout; // seconds
 
@@ -212,27 +213,28 @@ public class Dispatcher {
     /**
      * Constructor for Dispatcher.
      * @param doc Event-action map
-     * @param hardware Hardware to listen  to (IStringCommand)
+     * @param hardware Hardware to listen  to (ICommandLineDevice)
      * @param timeout Timeout in seconds, to restart the listener.
      * @throws IOException
      */
-    public Dispatcher(Document doc, IStringCommand hardware, int timeout) throws IOException {
+    public Dispatcher(Document doc, ICommandLineDevice hardware, boolean girs, int timeout) throws IOException {
         parseDoc(doc);
         this.hardware = hardware;
         this.timeout = timeout;
+        this.girs = girs;
     }
 
     /**
      * Constructor for Dispatcher.
      * @param configFile Event-action map
-     * @param hardware Hardware to listen  to (IStringCommand)
+     * @param hardware Hardware to listen  to (ICommandLineDevice)
      * @param timeout Timeout in seconds, to restart the listener.
      * @throws IOException
      * @throws org.xml.sax.SAXException Parse problem is configFile.
      */
-    public Dispatcher(File configFile, IStringCommand hardware, int timeout) throws IOException, SAXException {
+    public Dispatcher(File configFile, ICommandLineDevice hardware, boolean girs, int timeout) throws IOException, SAXException {
         this(XmlUtils.openXmlFile(configFile, readSchemaFromUrl(Dispatcher.class.getResource("/schemas/event-action-map.xsd")),
-                true, true), hardware, timeout);
+                true, true), hardware, girs, timeout);
     }
 
     private static Schema readSchemaFromUrl(URL schemaFile) throws SAXException {
@@ -242,23 +244,26 @@ public class Dispatcher {
     /**
      * Listener loop.
      *
-     * @param increment Try incrementing device names.
      * @return True if restart is requested.
      * @throws HarcHardwareException
      * @throws IOException
      */
-    public boolean listen(boolean increment) throws HarcHardwareException, IOException {
+    public boolean listen() throws HarcHardwareException, IOException {
         restartRequested = false;
         stopRequested = false;
         if (LocalSerialPortBuffered.class.isInstance(hardware)) {
             LocalSerialPortBuffered lspb = (LocalSerialPortBuffered) hardware;
-            lspb.open(increment);
-            logger.log(Level.INFO, "Opened {0} ({1})", new Object[]{lspb.getPortName(), lspb.getActualPortName()});
+            lspb.open();
+            logger.log(Level.INFO, "Opened {0}", new Object[]{lspb.getPortName()});
             lspb.dropDTR(500); // Force reset of Arduino
         } else
             hardware.open();
 
-        logger.info("Listen started");
+        if (girs) {
+
+        } else {
+            logger.info("Listen started");
+        }
         lastTimeAlive = new Date();
         int noTransmissions = 0;
         IrCommand old = null;
@@ -334,7 +339,7 @@ public class Dispatcher {
             }
             if (LocalSerialPortBuffered.class.isInstance(hardware)) {
                 LocalSerialPortBuffered lspb = (LocalSerialPortBuffered) hardware;
-                logger.log(Level.INFO, "Closing {0}", lspb.getActualPortName());
+                logger.log(Level.INFO, "Closing {0}", lspb.getPortName());
             }
             hardware.close();
         } catch (IOException ex) {
@@ -401,14 +406,14 @@ public class Dispatcher {
         @Parameter(names = {"-d", "--device"}, description = "Device name, e.g. COM7: or /dev/ttyUSB0")
         private String device = null;
 
+        @Parameter(names = {"-g", "--girs"}, description = "The device to connect is a Girs server")
+        private boolean girs = false;
+
         @Parameter(names = {"-h", "--help", "-?"}, description = "Display help message")
         private boolean helpRequested = false;
 
         @Parameter(names = {"-i", "--ip"}, description = "IP address or name")
         private String ip = null;
-
-        @Parameter(names = {"-I", "--increment"}, description = "Try incrementing the device name if necessary")
-        private boolean increment = false;
 
         @Parameter(names = {"-l", "--logfile"}, description = "Logfile")
         private String logfile = null;
@@ -494,7 +499,7 @@ public class Dispatcher {
         logger.setUseParentHandlers(false);
         logger.setLevel(logLevel);
 
-        IStringCommand hardware = null;
+        ICommandLineDevice hardware = null;
         if (commandLineArgs.device != null) {
             try {
                 hardware = new LocalSerialPortBuffered(commandLineArgs.device, commandLineArgs.baud, commandLineArgs.verbose);
@@ -521,7 +526,7 @@ public class Dispatcher {
         int maxTries = commandLineArgs.maxTries;
         Dispatcher dispatcher = null;
         try {
-            dispatcher = new Dispatcher(new File(commandLineArgs.configFilename), hardware, commandLineArgs.timeout);
+            dispatcher = new Dispatcher(new File(commandLineArgs.configFilename), hardware, commandLineArgs.girs, commandLineArgs.timeout);
             dispatcher.setVerbosity(commandLineArgs.verbose);
         } catch (IOException ex) {
             System.err.println("Could not initialize: " + ex.getMessage());
@@ -538,7 +543,7 @@ public class Dispatcher {
         boolean virgin = true;
         do {
             try {
-                restart = dispatcher.listen(commandLineArgs.increment);
+                restart = dispatcher.listen();
                 tries = 0;
                 virgin = false;
             } catch (HarcHardwareException | IOException ex) {
