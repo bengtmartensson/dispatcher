@@ -3,14 +3,14 @@
 # For Unix-like systems
 
 JAVA=java
-DISPATCHER_HOME=/usr/local/dispatcher
-RXTX_LOCATION=/usr/lib64/rxtx
+DISPATCHER_HOME=/usr/local/share/dispatcher
+RXTX_LOCATION=/usr/lib/jni
 VERSION=0.0.2
 # Requires suitable udev rules
-# Use the most specific name possible, preferably with unique serial
-#DEVICE=/dev/arduino_nano_qinheng
-DEVICE=/dev/arduino
-
+# Use the most specific name possible, preferrably with unique serial
+#DEVICE=/dev/arduino
+#DEVICE=/dev/arduino_nano_prolific
+DEVICE=/dev/ttyACM0
 BAUD=115200
 
 LOGFILE=/var/log/dispatcher.log
@@ -29,4 +29,4 @@ exec ${JAVA} -Djava.library.path=${RXTX_LOCATION} \
      -jar ${DISPATCHER_HOME}/Dispatcher-${VERSION}-jar-with-dependencies.jar \
      --config ${DISPATCHER_HOME}/listener.xml \
      --device ${DEVICE} --baud ${BAUD} \
-     --logfile ${LOGFILE} --loglevel FINE
+     --logfile ${LOGFILE} --loglevel INFO

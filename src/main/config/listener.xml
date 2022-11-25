@@ -9,7 +9,7 @@
                 <parameter description="on or off" default="on"/>
             </parameters>
             <action min="2">
-                <http url="http://ezcontrol/preset?switch=$1&amp;value=$2"/>
+                <http url="http://t10/preset?switch=$1&amp;value=$2"/>
             </action>
         </action-template>
 
@@ -77,12 +77,12 @@
         </ir-command>
         <ir-command protocol="rc5" D="5" F="4">
             <action>
-                <http url="http://ezcontrol/send?system=6&amp;hc1=13&amp;hc2=3&amp;addr=2&amp;value=255"/>
+                <http url="http://t10/send?system=6&amp;hc1=13&amp;hc2=3&amp;addr=2&amp;value=255"/>
             </action>
         </ir-command>
         <ir-command protocol="rc5" D="5" F="5">
             <action>
-                <http url="http://ezcontrol/send?system=6&amp;hc1=13&amp;hc2=3&amp;addr=2&amp;value=0"/>
+                <http url="http://t10/send?system=6&amp;hc1=13&amp;hc2=3&amp;addr=2&amp;value=0"/>
             </action>
         </ir-command>
 -->
@@ -92,7 +92,7 @@
                 <wol mac="00:00:00:00:00:00"/>
             </action>
         </ir-command>
-        <ir-command protocol="rc5" D="31" F="80">
+        <!--ir-command protocol="rc5" D="31" F="80">
             <action>
                 <wol hostname="box"/>
             </action>
@@ -101,7 +101,7 @@
             <action>
                 <wol hostname="epsilon"/>
             </action>
-        </ir-command>
+        </ir-command-->
 
         <ir-command protocol="rc5" D="31" F="90">
             <actionref template="harcmacro" arg1="start_dbox_tv()"/>
