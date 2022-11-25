@@ -9,12 +9,6 @@
     <packaging>jar</packaging>
     <version>0.0.3</version>
     <name>Dispatcher</name>
-    <!--parent>
-        <groupId>org.harctoolbox</groupId>
-        <artifactId>HarctoolboxBundle</artifactId>
-        <version>1.0.0</version>
-        <relativePath>..</relativePath>
-    </parent-->
     <licenses>
         <license>
             <name>GPL 3+</name>
@@ -101,7 +95,6 @@
                     </catalogs>
                 </configuration>
 
-                <!-- Use xalan instead of builtin parser which doesn't really work -->
                 <dependencies>
                     <dependency>
                         <groupId>xalan</groupId>
