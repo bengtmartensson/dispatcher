@@ -1,0 +1,15 @@
+[Unit]
+Description=Dispatcher
+After=network-online.target
+
+[Service]
+Type=simple
+#User=%i
+WorkingDirectory=/usr/local/share/dispatcher
+ExecStart=/usr/local/bin/dispatcher
+RestartForceExitStatus=100
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
