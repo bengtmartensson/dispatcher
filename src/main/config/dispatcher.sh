@@ -10,7 +10,8 @@ VERSION=0.0.2
 # Use the most specific name possible, preferrably with unique serial
 #DEVICE=/dev/arduino
 #DEVICE=/dev/arduino_nano_prolific
-DEVICE=/dev/ttyACM0
+#DEVICE=/dev/ttyACM0
+DEVICE=/dev/serial/by-id/usb-Arduino_LLC_Arduino_Micro-if00
 BAUD=115200
 
 LOGFILE=/var/log/dispatcher.log
