@@ -7,7 +7,7 @@
     <groupId>org.harctoolbox</groupId>
     <artifactId>Dispatcher</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.3</version>
+    <version>0.1.0-SNAPSHOT</version>
     <name>Dispatcher</name>
     <licenses>
         <license>
@@ -19,16 +19,44 @@
     <url>http://www.harctoolbox.org</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
-    <!--distributionManagement>
+
+    <developers>
+        <developer>
+            <name>Bengt Martensson</name>
+            <email>barf@bengt-martensson.de</email>
+            <url>http://www.bengt-martensson.de</url>
+            <roles>
+                <role>Project leader and architect</role>
+                <role>Developer</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com:bengtmartensson/${project.artifactId}.git</connection>
+        <developerConnection>scm:git:ssh://github.com:bengtmartensson/${project.artifactId}.git</developerConnection>
+        <url>https://github.com/bengtmartensson/${project.artifactId}/tree/master</url>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/bengtmartensson/dispatcher/issues</url>
+    </issueManagement>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
         <repository>
-            <id>repos</id>
-            <name>Repository</name>
-            <url>file:///${project.basedir}/../repos</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
-    </distributionManagement-->
+    </distributionManagement>
+
     <build>
         <plugins>
 
@@ -36,24 +64,31 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>xml-maven-plugin</artifactId>
-                <version>1.0</version>
+                <version>1.0.2</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
                         <goals>
+                            <!--goal>validate</goal-->
                             <goal>transform</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
+                    <basedir>common/schemas</basedir>
+                    <catalogHandling>strict</catalogHandling>
+                    <catalogs>
+                        <catalog>catalog.xml</catalog>
+                    </catalogs>
                     <transformationSets>
                         <transformationSet>
+                            <!-- Generate Version.java from Version.xml using mkVersion.xsl. -->
                             <dir>src/main/xml</dir>
                             <outputDir>${project.build.directory}/generated-sources/xml/org/harctoolbox/dispatcher</outputDir>
                             <includes>
                                 <include>Version.xml</include>
                             </includes>
-                            <stylesheet>../harctoolboxbundle/tools/mkVersion.xsl</stylesheet>
+                            <stylesheet>${project.basedir}/common/xslt/mkVersion.xsl</stylesheet>
                             <parameters>
                                 <parameter>
                                     <name>version</name>
@@ -67,6 +102,10 @@
                                     <name>appName</name>
                                     <value>${project.artifactId}</value>
                                 </parameter>
+                                <parameter>
+                                    <name>commitId</name>
+                                    <value>${git.commit.id}</value>
+                                </parameter>
                             </parameters>
                             <fileMappers>
                                 <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
@@ -74,25 +113,7 @@
                                 </fileMapper>
                             </fileMappers>
                         </transformationSet>
-                        <!--transformationSet>
-                            <dir>src/main/xdocs</dir>
-                            <outputDir>
-                                ${project.build.directory}/generated-documents
-                            </outputDir>
-                            <includes>
-                                <include>Girr.xml</include>
-                            </includes>
-                            <stylesheet>../tools/xdoc2html.xsl</stylesheet>
-                            <fileMappers>
-                                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
-                                    <targetExtension>.html</targetExtension>
-                                </fileMapper>
-                            </fileMappers>
-                        </transformationSet-->
                     </transformationSets>
-                    <catalogs>
-                        <catalog>../harctoolboxbundle/schemas/catalog.xml</catalog>
-                    </catalogs>
                 </configuration>
 
                 <dependencies>
@@ -108,6 +129,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.4.2</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -138,7 +160,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <version>3.10.1</version>
                 <configuration>
                     <showDeprecation>true</showDeprecation>
                 </configuration>
@@ -147,7 +169,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.6</version>
+                <version>3.3.0</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -159,7 +181,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.9.1</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
@@ -177,11 +199,29 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.3</version>
+                <version>3.4.1</version>
                 <configuration>
                     <!--additionalJOption>-Xdoclint:none</additionalJOption-->
                     <show>package</show> <!-- Document also package private classes -->
                     <aggregate>true</aggregate>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>4.9.10</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <dateFormat>yyyyMMdd</dateFormat><!--  human-readable part of the version number -->
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                    <generateGitPropertiesFile>false</generateGitPropertiesFile><!-- somehow necessary. otherwise the variables are not available in the pom -->
                 </configuration>
             </plugin>
         </plugins>
