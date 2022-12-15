@@ -27,6 +27,7 @@ class Echo extends AbstractAction {
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     boolean action() {
         System.out.println(payload);
         Logger.getLogger(Dispatcher.class.getName()).info("echoing \"payload\"");

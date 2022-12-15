@@ -17,12 +17,11 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.dispatcher;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.comm.Wol;
+import org.harctoolbox.harchardware.misc.Ethers;
 
 class WolAction extends AbstractAction {
     private Wol wol = null;
@@ -33,7 +32,7 @@ class WolAction extends AbstractAction {
         String str = ethernetAddressString.isEmpty() ? hostname : ethernetAddressString;
         try {
             wol = new Wol(str);
-        } catch (FileNotFoundException|HarcHardwareException ex) {
+        } catch (IOException | Ethers.MacAddressNotFound ex) {
             Logger.getLogger(Dispatcher.class.getName()).log(Level.SEVERE, "Can not resolve \"{0}\" to MAC address", str);
         }
     }

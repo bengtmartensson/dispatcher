@@ -18,6 +18,8 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.dispatcher;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.w3c.dom.Element;
@@ -28,6 +30,69 @@ class Action {
     private int min = 1;
     private int max = 9999;
     private ArrayList<AbstractAction> actions;
+
+    Action(Element element, String[] params, Dispatcher owner) {
+        String minAtt = substitute(element.getAttribute("min"), params);
+        min = minAtt.isEmpty() ? 1 : Integer.parseInt(minAtt);
+        String maxAtt = substitute(element.getAttribute("max"), params);
+        max = maxAtt.isEmpty() ? 9999 : Integer.parseInt(maxAtt);
+        NodeList nl = element.getChildNodes();
+        actions = new ArrayList<>(64);
+        for (int i = 0; i < nl.getLength(); i++) {
+            if (nl.item(i).getNodeType() != Node.ELEMENT_NODE)
+                continue;
+            Element el = (Element) nl.item(i);
+            String type = el.getTagName();
+            AbstractAction action = null;
+            switch (type) {
+                case "echo":
+                    action = new Echo(substitute(el.getTextContent(), params));
+                    break;
+                case "wol":
+                    action = new WolAction(substitute(el.getAttribute("mac"), params),
+                            substitute(el.getAttribute("hostname"), params));
+                    break;
+                case "quit":
+                    action = new Quit(owner);
+                    break;
+                case "restart":
+                    action = new Restart(owner);
+                    break;
+                case "tcp":
+                    action = new Tcp(substitute(el.getAttribute("hostname"), params),
+                            Integer.parseInt(substitute(el.getAttribute("port"), params)),
+                            substitute(el.getAttribute("timeout"), params),
+                            substitute(el.getTextContent(), params));
+                    break;
+                case "udp":
+                    action = new Udp(substitute(el.getAttribute("hostname"), params),
+                            Integer.parseInt(substitute(el.getAttribute("port"), params)),
+                            substitute(el.getAttribute("timeout"), params),
+                            substitute(el.getTextContent(), params));
+                    break;
+                case "http":
+                    action = new Http(substitute(el.getAttribute("url"), params));
+                    break;
+                case "exec":
+                    NodeList argumentNodes = el.getElementsByTagName("argument");
+                    String arguments[] = new String[argumentNodes.getLength()];
+                    for (int j = 0; j < argumentNodes.getLength(); j++)
+                        arguments[j] = substitute(argumentNodes.item(j).getTextContent(), params);
+
+                    action = new Exec(substitute(el.getAttribute("progname"), params),
+                            arguments,
+                            substitute(el.getAttribute("wait"), params).equals("true"),
+                            substitute(el.getAttribute("directory"), params),
+                            substitute(el.getAttribute("in"), params),
+                            substitute(el.getAttribute("out"), params),
+                            substitute(el.getAttribute("err"), params));
+                    break;
+                default:
+                    Logger.getLogger(Dispatcher.class.getName()).log(Level.INFO, "Unknown action {0}", type);
+            }
+            actions.add(action);
+        }
+    }
 
     /**
      * @return the min
@@ -46,8 +111,8 @@ class Action {
     /**
      * @return the actions
      */
-    public ArrayList<AbstractAction> getActions() {
-        return actions;
+    public List<AbstractAction> getActions() {
+        return Collections.unmodifiableList(actions);
     }
 
     private String substitute(String in, String[] parameters) {
@@ -56,71 +121,5 @@ class Action {
             str = str.replaceAll("\\$" + Integer.toString(i+1), parameters[i]);
         }
         return str;
-    }
-
-    Action(Element element, String[] params, Dispatcher owner) {
-        String minAtt = substitute(element.getAttribute("min"), params);
-        min = minAtt.isEmpty() ? 1 : Integer.parseInt(minAtt);
-        String maxAtt = substitute(element.getAttribute("max"), params);
-        max = maxAtt.isEmpty() ? 9999 : Integer.parseInt(maxAtt);
-        NodeList nl = element.getChildNodes();
-        actions = new ArrayList<>();
-        for (int i = 0; i < nl.getLength(); i++) {
-                if (nl.item(i).getNodeType() != Node.ELEMENT_NODE)
-                    continue;
-                Element el = (Element) nl.item(i);
-                String type = el.getTagName();
-                AbstractAction action = null;
-                switch (type) {
-                    case "echo":
-                        action = new Echo(substitute(el.getTextContent(), params));
-                        break;
-                    case "wol":
-                        action = new WolAction(substitute(el.getAttribute("mac"), params),
-                                         substitute(el.getAttribute("hostname"), params));
-                        break;
-                    case "quit":
-                        action = new Quit(owner);
-                        break;
-                    case "restart":
-                        action = new Restart(owner);
-                        break;
-                    case "tcp":
-                        action = new Tcp(substitute(el.getAttribute("hostname"), params),
-                                Integer.parseInt(substitute(el.getAttribute("port"), params)),
-                                substitute(el.getAttribute("timeout"), params),
-                                substitute(el.getTextContent(), params));
-                        break;
-                    case "udp":
-                        action = new Udp(substitute(el.getAttribute("hostname"), params),
-                                Integer.parseInt(substitute(el.getAttribute("port"), params)),
-                                substitute(el.getAttribute("timeout"), params),
-                                substitute(el.getTextContent(), params));
-                        break;
-                    case "http":
-                        action = new Http(substitute(el.getAttribute("url"), params));
-                        break;
-                    case "exec":
-                        NodeList argumentNodes = el.getElementsByTagName("argument");
-                        String arguments[] = new String[argumentNodes.getLength()];
-                        for (int j = 0; j < argumentNodes.getLength(); j++)
-                            arguments[j] = substitute(argumentNodes.item(j).getTextContent(), params);
-
-                        action = new Exec(substitute(el.getAttribute("progname"), params),
-                                arguments,
-                                substitute(el.getAttribute("wait"), params).equals("true"),
-                                substitute(el.getAttribute("directory"), params),
-                                substitute(el.getAttribute("in"), params),
-                                substitute(el.getAttribute("out"), params),
-                                substitute(el.getAttribute("err"), params));
-                        break;
-                    default:
-                        Logger.getLogger(Dispatcher.class.getName()).log(Level.INFO, "Unknown action {0}", type);
-                }
-                actions.add(action);
-            //} catch (HarcHardwareException | MalformedURLException | FileNotFoundException ex) {
-            //    Logger.getLogger(Dispatcher.class.getName()).warning(ex.getMessage());
-            //}
-        }
     }
 }

@@ -20,9 +20,6 @@ package org.harctoolbox.dispatcher;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -31,7 +28,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
@@ -43,12 +42,14 @@ import java.util.logging.Logger;
 import javax.xml.XMLConstants;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.XmlUtils;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
+import org.harctoolbox.harchardware.Utils;
+import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortBuffered;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
+import org.harctoolbox.irp.IrpUtils;
+import org.harctoolbox.xml.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -137,8 +138,8 @@ public class Dispatcher {
 
     private static final Logger logger = Logger.getLogger(Dispatcher.class.getName());
 
-    private HashMap<IrCommand, ArrayList<Action>> map = new HashMap<>();
-    private HashMap<String, Element> actionRefs = new HashMap<>();
+    private Map<IrCommand, List<Action>> map = new HashMap<>(32);
+    private Map<String, Element> actionRefs = new HashMap<>(32);
 
     /**
      * Set verbosity.
@@ -187,7 +188,7 @@ public class Dispatcher {
                     ? new IrCommand(protocol, D, F)
                     : new IrCommand(protocol, D, Integer.parseInt(Sattr), F);
             NodeList nl = el.getChildNodes();
-            ArrayList<Action> actions = new ArrayList<>();
+            List<Action> actions = new ArrayList<>(32);
             for (int j = 0; j < nl.getLength(); j++) {
                 if (nl.item(j).getNodeType() == Node.ELEMENT_NODE) {
                     Element actionEl = (Element) nl.item(j);
@@ -248,6 +249,7 @@ public class Dispatcher {
      * @throws HarcHardwareException
      * @throws IOException
      */
+    @SuppressWarnings("SleepWhileInLoop")
     public boolean listen() throws HarcHardwareException, IOException {
         restartRequested = false;
         stopRequested = false;
@@ -267,6 +269,7 @@ public class Dispatcher {
         lastTimeAlive = new Date();
         int noTransmissions = 0;
         IrCommand old = null;
+        @SuppressWarnings("UnusedAssignment")
         IrCommand irCommand = null;
         try {
             while (!stopRequested) {
@@ -306,6 +309,7 @@ public class Dispatcher {
                         try {
                             int D = Integer.parseInt(parts[1]);
                             int S = -1;
+                            @SuppressWarnings("UnusedAssignment")
                             int F = 0;
                             if (protocol.equals("nec1")) {
                                 if (parts.length > 3) {
@@ -353,7 +357,7 @@ public class Dispatcher {
 
     private void triggerAction(IrCommand irCommand, int noTransmissions) {
         logger.log(Level.FINE, "triggerAction: {0} {1}", new Object[]{irCommand, noTransmissions});
-        ArrayList<Action> restrictions = map.get(irCommand);
+        List<Action> restrictions = map.get(irCommand);
         int noActions = 0;
         if (restrictions != null) {
             for (Action restriction : restrictions) {
@@ -367,7 +371,7 @@ public class Dispatcher {
             logger.log(Level.FINE, "triggerAction: {0} {1} triggered no actions.", new Object[]{irCommand, noTransmissions});
     }
 
-    private void executeActions(ArrayList<AbstractAction> actions, String triggerName) {
+    private void executeActions(List<AbstractAction> actions, String triggerName) {
         for (AbstractAction action : actions) {
             logger.log(Level.INFO, "{0} -> {1}", new Object[]{triggerName, action});
             try {
@@ -384,10 +388,9 @@ public class Dispatcher {
     }
 
     private static void usage(int exitcode) {
-        StringBuilder str = new StringBuilder();
-        argumentParser.usage(str);
+        argumentParser.usage();
 
-        (exitcode == IrpUtils.exitSuccess ? System.out : System.err).println(str);
+        //(exitcode == IrpUtils.exitSuccess ? System.out : System.err).println(str);
         doExit(exitcode);
     }
 
@@ -395,7 +398,10 @@ public class Dispatcher {
         System.exit(exitcode);
     }
 
+    @SuppressWarnings("FieldMayBeFinal")
     private final static class CommandLineArgs {
+        @Parameter(names = {"-a", "--applicationhome", "--apphome", "-H", "--home"}, description = "Set application home (where files are located)")
+        private String applicationHome = null;
 
         @Parameter(names = {"-b", "--baud"}, description = "Baudrate of serial port")
         private int baud = 115200;
@@ -447,6 +453,7 @@ public class Dispatcher {
      * Main function for the program.
      * @param args
      */
+    @SuppressWarnings({"UseOfSystemOutOrSystemErr", "SleepWhileInLoop", "null"})
     public static void main(String[] args) {
         argumentParser = new JCommander(commandLineArgs);
         argumentParser.setProgramName("Dispatcher");
@@ -455,18 +462,18 @@ public class Dispatcher {
             argumentParser.parse(args);
         } catch (ParameterException ex) {
             System.err.println(ex.getMessage());
-            usage(IrpUtils.exitUsageError);
+            usage(IrpUtils.EXIT_USAGE_ERROR);
         }
 
         if (commandLineArgs.helpRequested)
-            usage(IrpUtils.exitSuccess);
+            usage(IrpUtils.EXIT_SUCCESS);
 
         if (commandLineArgs.versionRequested) {
             System.out.println(Version.versionString);
             System.out.println("JVM: " + System.getProperty("java.vendor") + " " + System.getProperty("java.version") + " " + System.getProperty("os.name") + "-" + System.getProperty("os.arch"));
             System.out.println();
             System.out.println(Version.licenseString);
-            System.exit(IrpUtils.exitSuccess);
+            System.exit(IrpUtils.EXIT_SUCCESS);
         }
 
         Level logLevel = Level.INFO;
@@ -478,6 +485,7 @@ public class Dispatcher {
             }
         }
 
+        @SuppressWarnings("UnusedAssignment")
         Handler handler = null;
         if (commandLineArgs.logfile != null) {
             String filename = commandLineArgs.logfile;
@@ -488,7 +496,7 @@ public class Dispatcher {
                 handler = new FileHandler(filename, append);
             } catch (IOException | SecurityException ex) {
                 System.err.println(ex.getMessage());
-                System.exit(IrpUtils.exitIoError);
+                System.exit(IrpUtils.EXIT_IO_ERROR);
             }
         } else {
             handler = new ConsoleHandler();
@@ -499,25 +507,31 @@ public class Dispatcher {
         logger.setUseParentHandlers(false);
         logger.setLevel(logLevel);
 
+        String appHome = commandLineArgs.applicationHome != null ? commandLineArgs.applicationHome : System.getProperty("user.dir");
+        logger.log(Level.FINE, "appHome = {0}", appHome);
+        File libDir = Utils.libraryDir(appHome);
+        logger.log(Level.FINE, "libDir = {0}", libDir);
+
         ICommandLineDevice hardware = null;
         if (commandLineArgs.device != null) {
             try {
-                hardware = new LocalSerialPortBuffered(commandLineArgs.device, commandLineArgs.baud, commandLineArgs.verbose);
-            } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException ex) {
+                LocalSerialPort.setLibraryDir(libDir);
+                hardware = new LocalSerialPortBuffered(commandLineArgs.device, commandLineArgs.verbose, null, commandLineArgs.baud);
+            } catch (IOException ex) {
                 System.err.println(ex.getMessage());
-                doExit(IrpUtils.exitIoError);
+                doExit(IrpUtils.EXIT_IO_ERROR);
             }
         } else if (commandLineArgs.ip != null) {
             try {
                 // FIXME untested
-                hardware = new TcpSocketPort(commandLineArgs.ip, commandLineArgs.port, commandLineArgs.verbose, TcpSocketPort.ConnectionMode.keepAlive);
+                hardware = new TcpSocketPort(commandLineArgs.ip, commandLineArgs.port, commandLineArgs.timeout, commandLineArgs.verbose, TcpSocketPort.ConnectionMode.keepAlive);
             } catch (UnknownHostException ex) {
                 System.err.println(ex.getMessage());
-                doExit(IrpUtils.exitIoError);
+                doExit(IrpUtils.EXIT_IO_ERROR);
             }
         } else {
             System.err.println("Either device or ip must be given.");
-            doExit(IrpUtils.exitSemanticUsageError);
+            doExit(IrpUtils.EXIT_SEMANTIC_USAGE_ERROR);
         }
 
         System.err.println("Starting " + Version.versionString);
@@ -531,11 +545,11 @@ public class Dispatcher {
         } catch (IOException ex) {
             System.err.println("Could not initialize: " + ex.getMessage());
             logger.log(Level.SEVERE, "Error in constructor", ex);
-            doExit(IrpUtils.exitIoError);
+            doExit(IrpUtils.EXIT_IO_ERROR);
         } catch (SAXException ex) {
             System.err.println("Could not read configuration file: " + ex.getMessage());
             logger.log(Level.SEVERE, "Configuration error file {0}", ex.getMessage());
-            doExit(IrpUtils.exitXmlError);
+            doExit(IrpUtils.EXIT_XML_ERROR);
         }
 
         boolean restart = false;
@@ -549,14 +563,15 @@ public class Dispatcher {
             } catch (HarcHardwareException | IOException ex) {
                 // There are some severe problems (likely gnu.io.NoSuchPortException) if I got here.
                 // If it is the first time, or too many retries, quit,...
-                if (++tries >= maxTries || virgin) {
+                tries++;
+                if (tries >= maxTries || virgin) {
                     System.err.println(ex.getMessage());
                     logger.severe(ex.getMessage());
                     if (virgin)
                         System.err.println("Cannot open the hardware, exiting.");
                     else
                         logger.log(Level.SEVERE, "Too many retries ({0}), giving up.", maxTries);
-                    doExit(IrpUtils.exitIoError);
+                    doExit(IrpUtils.EXIT_IO_ERROR);
                 }
                 // ... otherwise we wait a while and try again.
                 logger.log(Level.SEVERE, "Problem in listener: {0}", ex.getMessage());

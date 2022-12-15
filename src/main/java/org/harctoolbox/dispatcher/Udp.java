@@ -41,7 +41,7 @@ class Udp extends AbstractAction {
     @Override
     boolean action() throws IOException {
         UdpSocketChannel udpSocketChannel = new UdpSocketChannel(host, portNo, timeOut, false);
-        udpSocketChannel.connect();
+        //udpSocketChannel.connect();
         if (!udpSocketChannel.isValid())
             return false;
         //udpSocketChannel.open();

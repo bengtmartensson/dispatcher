@@ -21,11 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 
 class Exec extends AbstractAction {
 
-    private final ArrayList<String> cmdArray = new ArrayList<>();
+    private final List<String> cmdArray = new ArrayList<>(32);
     private final boolean waitProc;
     private final ProcessBuilder processBuilder;
     private final String shellForm;
@@ -45,11 +46,12 @@ class Exec extends AbstractAction {
                 : ProcessBuilder.Redirect.INHERIT);
         this.waitProc = wait;
 
-        StringBuilder str = new StringBuilder();
+        StringBuilder str = new StringBuilder(256);
         if (!directory.isEmpty())
             str.append("( cd ").append(directory).append(" ; ");
-        for (String s : cmdArray)
+        cmdArray.forEach(s -> {
             str.append(s).append(" ");
+        });
         if (in != null && !in.isEmpty())
             str.append("< ").append(in);
         if (out != null && !out.isEmpty())
