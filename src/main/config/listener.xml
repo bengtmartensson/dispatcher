@@ -22,10 +22,22 @@
             </action>
         </action-template>
 
+        <action-template id="homeassistant-toggle">
+            <parameters>
+                <parameter description="entity_id for homeassistant"/>
+            </parameters>
+            <action min="2">
+                <homeassistant host="homeassistant" port="8123" token="@/usr/local/share/dispatcher/homeassistant-token.txt" type="put" kind="services" domain="homeassistant" service="toggle" entity_id="$1"/>
+            </action>
+        </action-template>
+
     </action-templates>
 
 
     <ir-commands>
+        <ir-command protocol="rc5" D="31" F="23">
+            <actionref template="homeassistant-toggle" arg1="light.rock_lamp"/>
+        </ir-command>
         <!--ir-command protocol="NEC1" D="73" F="83" description="OK for Oppo">
             <action min="6">
                 <echo>Hey mama, got OK from Oppo</echo>

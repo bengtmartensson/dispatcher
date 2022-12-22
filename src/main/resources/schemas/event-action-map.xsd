@@ -100,11 +100,48 @@
         <xs:element ref="tcp" />
         <xs:element ref="udp" />
         <xs:element ref="http" />
+        <xs:element ref="homeassistant" />
       </xs:choice>
       <xs:attribute default="1" name="min" type="xs:nonNegativeInteger" />
       <xs:attribute default="9999" name="max" type="xs:nonNegativeInteger" />
       <xs:attribute name="description" type="xs:string" />
     </xs:complexType>
+  </xs:element>
+
+  <xs:element name="homeassistant">
+      <xs:complexType>
+          <xs:attribute name="host" type="xs:string" default="homeassistant"/>
+          <xs:attribute name="port" type="xs:nonNegativeInteger" default="8123"/>
+          <xs:attribute name="token" type="xs:string" default="@token.txt"/>
+          <xs:attribute name="type" default="put">
+              <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                      <xs:enumeration value="get"/>
+                      <xs:enumeration value="put"/>
+                  </xs:restriction>
+              </xs:simpleType>
+          </xs:attribute>
+          <xs:attribute name="kind" default="services">
+              <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                      <xs:enumeration value="services"/>
+                      <xs:enumeration value="events"/>
+                  </xs:restriction>
+              </xs:simpleType>
+          </xs:attribute>
+          <xs:attribute name="domain">
+              <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                      <xs:enumeration value="homeassistant"/>
+                      <xs:enumeration value="light"/>
+                      <xs:enumeration value="switch"/>
+                      <xs:enumeration value="shell_command"/>
+                  </xs:restriction>
+              </xs:simpleType>
+          </xs:attribute>
+          <xs:attribute name="service" type="xs:string" use="optional"/>
+          <xs:attribute name="entity_id" type="xs:string" use="optional"/>
+      </xs:complexType>
   </xs:element>
 
   <xs:element name="echo" type="xs:string" />
@@ -119,7 +156,7 @@
 
   <xs:element name="wol">
     <xs:complexType>
-            <!-- one of these -->
+      <!-- one of these -->
       <xs:attribute name="mac" type="xs:string" />
       <xs:attribute name="hostname" type="xs:string" />
     </xs:complexType>

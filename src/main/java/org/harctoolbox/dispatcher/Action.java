@@ -17,6 +17,7 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.dispatcher;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +28,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 class Action {
+
+    private static final Logger logger = Logger.getLogger(Action.class.getName());
+
     private int min = 1;
     private int max = 9999;
     private ArrayList<AbstractAction> actions;
@@ -73,9 +77,9 @@ class Action {
                 case "http":
                     action = new Http(substitute(el.getAttribute("url"), params));
                     break;
-                case "exec":
+                case "exec": {
                     NodeList argumentNodes = el.getElementsByTagName("argument");
-                    String arguments[] = new String[argumentNodes.getLength()];
+                    String[] arguments = new String[argumentNodes.getLength()];
                     for (int j = 0; j < argumentNodes.getLength(); j++)
                         arguments[j] = substitute(argumentNodes.item(j).getTextContent(), params);
 
@@ -86,7 +90,27 @@ class Action {
                             substitute(el.getAttribute("in"), params),
                             substitute(el.getAttribute("out"), params),
                             substitute(el.getAttribute("err"), params));
-                    break;
+                }
+                break;
+                case "homeassistant": {
+                    try {
+                        action = new HomeAssistant(
+                                substitute(el.getAttribute("host"), params),
+                                Integer.parseInt(substitute(el.getAttribute("port"), params)),
+                                substitute(el.getAttribute("token"), params),
+                                substitute(el.getAttribute("type"), params),
+                                substitute(el.getAttribute("kind"), params),
+                                substitute(el.getAttribute("domain"), params),
+                                substitute(el.getAttribute("service"), params),
+                                substitute(el.getAttribute("entity_id"), params)
+                        );
+                    } catch (IOException ex) {
+                        logger.log(Level.SEVERE, ex.getLocalizedMessage());
+                        action = null;
+                    }
+                }
+                break;
+
                 default:
                     Logger.getLogger(Dispatcher.class.getName()).log(Level.INFO, "Unknown action {0}", type);
             }
